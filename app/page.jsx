@@ -2517,22 +2517,28 @@ export default function HomePage() {
       let worker = ocrWorkerRef.current;
       if (!worker) {
         const cdnBases = [
-          'https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M',
+          'https://fastly.jsdelivr.net/npm',
           'https://cdn.jsdelivr.net/npm',
-          'https://cdn.jsdmirror.com/npm'
+        ];
+        const coreCandidates = [
+          'tesseract-core-simd-lstm.wasm.js',
+          'tesseract-core-lstm.wasm.js',
         ];
         let lastErr = null;
         for (const base of cdnBases) {
-          try {
-            worker = await createWorker('eng', 1, {
-              workerPath: `${base}/tesseract.js@v7.0.0/dist/worker.min.js`,
-              corePath: `${base}/tesseract.js-core@v7.0.0/tesseract-core-relaxedsimd-lstm.wasm.js`
-            });
-            lastErr = null;
-            break;
-          } catch (e) {
-            lastErr = e;
+          for (const coreFile of coreCandidates) {
+            try {
+              worker = await createWorker('eng', 1, {
+                workerPath: `${base}/tesseract.js@v5.1.1/dist/worker.min.js`,
+                corePath: `${base}/tesseract.js-core@v5.1.1/${coreFile}`,
+              });
+              lastErr = null;
+              break;
+            } catch (e) {
+              lastErr = e;
+            }
           }
+          if (!lastErr) break;
         }
         if (lastErr) throw lastErr;
         ocrWorkerRef.current = worker;
