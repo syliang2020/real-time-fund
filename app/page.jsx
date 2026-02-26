@@ -3647,9 +3647,8 @@ export default function HomePage() {
                           <div className="table-header-row table-header-row-scroll">
                             <div className="table-header-cell">基金名称</div>
                             <div className="table-header-cell text-right">净值/估值</div>
-                            <div className="table-header-cell text-right">涨跌幅</div>
+                            <div className="table-header-cell text-right">昨日涨跌幅</div>
                             <div className="table-header-cell text-right">估值涨跌幅</div>
-                            <div className="table-header-cell text-right">估值时间</div>
                             <div className="table-header-cell text-right">持仓金额</div>
                             <div className="table-header-cell text-right">当日收益</div>
                             <div className="table-header-cell text-right">持有收益</div>
@@ -3695,17 +3694,24 @@ export default function HomePage() {
                                     );
                                   })()}
                                   <div className="table-cell text-right change-cell">
-                                    <span className={f.zzl > 0 ? 'up' : f.zzl < 0 ? 'down' : ''} style={{ fontWeight: 700 }}>
-                                      {f.zzl != null && f.zzl !== '' ? `${f.zzl > 0 ? '+' : ''}${Number(f.zzl).toFixed(2)}%` : '—'}
-                                    </span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                      <span className={f.zzl > 0 ? 'up' : f.zzl < 0 ? 'down' : ''} style={{ fontWeight: 700 }}>
+                                        {f.zzl != null && f.zzl !== '' ? `${f.zzl > 0 ? '+' : ''}${Number(f.zzl).toFixed(2)}%` : '—'}
+                                      </span>
+                                      <span className="muted" style={{ fontSize: '12px' }}>
+                                        {f.jzrq || '-'}
+                                      </span>
+                                    </div>
                                   </div>
                                   <div className="table-cell text-right est-change-cell">
-                                    <span className={f.noValuation ? 'muted' : (f.estPricedCoverage > 0.05 ? (f.estGszzl > 0 ? 'up' : f.estGszzl < 0 ? 'down' : '') : (Number(f.gszzl) > 0 ? 'up' : Number(f.gszzl) < 0 ? 'down' : ''))} style={{ fontWeight: 700 }}>
-                                      {f.noValuation ? '—' : (f.estPricedCoverage > 0.05 ? (f.estGszzl != null ? `${f.estGszzl > 0 ? '+' : ''}${Number(f.estGszzl).toFixed(2)}%` : '—') : (isNumber(f.gszzl) ? `${f.gszzl > 0 ? '+' : ''}${Number(f.gszzl).toFixed(2)}%` : (f.gszzl ?? '—')))}
-                                    </span>
-                                  </div>
-                                  <div className="table-cell text-right time-cell">
-                                    <span className="muted" style={{ fontSize: '12px' }}>{f.noValuation ? (f.jzrq || '-') : (f.gztime || f.time || '-')}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                      <span className={f.noValuation ? 'muted' : (f.estPricedCoverage > 0.05 ? (f.estGszzl > 0 ? 'up' : f.estGszzl < 0 ? 'down' : '') : (Number(f.gszzl) > 0 ? 'up' : Number(f.gszzl) < 0 ? 'down' : ''))} style={{ fontWeight: 700 }}>
+                                        {f.noValuation ? '—' : (f.estPricedCoverage > 0.05 ? (f.estGszzl != null ? `${f.estGszzl > 0 ? '+' : ''}${Number(f.estGszzl).toFixed(2)}%` : '—') : (isNumber(f.gszzl) ? `${f.gszzl > 0 ? '+' : ''}${Number(f.gszzl).toFixed(2)}%` : (f.gszzl ?? '—')))}
+                                      </span>
+                                      <span className="muted" style={{ fontSize: '12px' }}>
+                                        {f.noValuation ? (f.jzrq || '-') : (f.gztime || f.time || '-')}
+                                      </span>
+                                    </div>
                                   </div>
                                   {(() => {
                                     const holding = holdings[f.code];
@@ -3721,7 +3727,7 @@ export default function HomePage() {
                                     return (
                                       <div className="table-cell text-right holding-amount-cell" title="点击设置持仓" onClick={(e) => { e.stopPropagation(); setActionModal({ open: true, fund: f }); }}>
                                         <span style={{ fontWeight: 700, marginRight: 6 }}>¥{amount.toFixed(2)}</span>
-                                        <button className="icon-button" onClick={(e) => { e.stopPropagation(); setActionModal({ open: true, fund: f }); }} title="编辑持仓" style={{ border: 'none', width: '28px', height: '28px', marginLeft: -6 }}>
+                                        <button className="icon-button no-hover" onClick={(e) => { e.stopPropagation(); setActionModal({ open: true, fund: f }); }} title="编辑持仓" style={{ border: 'none', width: '28px', height: '28px', marginLeft: -6 }}>
                                           <SettingsIcon width="14" height="14" />
                                         </button>
                                       </div>
