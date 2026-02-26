@@ -709,6 +709,111 @@ input[type="number"] {
   grid-column: span 12;
 }
 
+/* PC 列表：左右分块，左侧可横向滚动，右侧操作列固定不参与滚动 */
+.table-pc-wrap {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-width: 0;
+}
+
+.table-scroll-area {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* 固定像素列宽，避免初始在视口外的列滚入后布局错误、内容不展示；不依赖 fr/内容测量 */
+.table-scroll-area-inner {
+  width: 1152px;
+  min-width: 1152px;
+}
+
+/* 基金名称 净值 涨跌幅 估值涨跌幅 估值时间 持仓金额 当日收益 持有收益（当日收益与持有收益同宽） */
+.table-header-row-scroll,
+.table-row-scroll {
+  display: grid;
+  grid-template-columns: 220px 100px 100px 100px 100px 120px 140px 140px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.table-header-row-scroll {
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
+}
+
+.table-header-row-scroll .table-header-cell {
+  white-space: nowrap;
+}
+
+/* 表格行内容不换行，单行显示 */
+.table-row-scroll .table-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.table-row-scroll .name-cell .name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-row-scroll {
+  padding: 12px 24px !important;
+  min-height: 52px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+}
+
+.table-row-scroll:hover,
+.table-row-scroll.row-hovered {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.table-fixed-row.row-hovered {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.table-fixed-col {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+}
+
+.table-header-cell-fixed {
+  padding: 16px 12px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.table-fixed-row {
+  min-height: 52px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-bottom: none;
+}
+
+.table-fixed-row .table-cell {
+  border: none;
+}
+
 .table-row-wrapper {
   width: 100%;
 }

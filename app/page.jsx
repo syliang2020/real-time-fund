@@ -447,6 +447,7 @@ export default function HomePage() {
   const todayStr = formatDate();
 
   const [isMobile, setIsMobile] = useState(false);
+  const [hoveredPcRowCode, setHoveredPcRowCode] = useState(null); // PC 列表行悬浮高亮
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -3638,7 +3639,155 @@ export default function HomePage() {
                   className={viewMode === 'card' ? 'grid' : 'table-container glass'}
                 >
                   <div className={viewMode === 'card' ? 'grid col-12' : ''} style={viewMode === 'card' ? { gridColumn: 'span 12', gap: 16 } : {}}>
-                    {viewMode === 'list' && (
+                    {/* PC 列表：左右分块，左侧 8 列可横向滚动，右侧操作列固定 */}
+                    {viewMode === 'list' && !isMobile && (
+                      <div className="table-pc-wrap">
+                        <div className="table-scroll-area">
+                          <div className="table-scroll-area-inner">
+                          <div className="table-header-row table-header-row-scroll">
+                            <div className="table-header-cell">基金名称</div>
+                            <div className="table-header-cell text-right">净值/估值</div>
+                            <div className="table-header-cell text-right">涨跌幅</div>
+                            <div className="table-header-cell text-right">估值涨跌幅</div>
+                            <div className="table-header-cell text-right">估值时间</div>
+                            <div className="table-header-cell text-right">持仓金额</div>
+                            <div className="table-header-cell text-right">当日收益</div>
+                            <div className="table-header-cell text-right">持有收益</div>
+                          </div>
+                          <AnimatePresence mode="popLayout">
+                            {displayFunds.map((f) => (
+                              <motion.div
+                                layout="position"
+                                key={f.code}
+                                className="table-row-wrapper"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                style={{ position: 'relative', overflow: 'hidden' }}
+                                onMouseEnter={() => setHoveredPcRowCode(f.code)}
+                                onMouseLeave={() => setHoveredPcRowCode(null)}
+                              >
+                                <div className={`table-row table-row-scroll ${hoveredPcRowCode === f.code ? 'row-hovered' : ''}`} style={{ background: hoveredPcRowCode === f.code ? 'rgba(255,255,255,0.08)' : 'var(--bg)', position: 'relative', zIndex: 1 }}>
+                                  <div className="table-cell name-cell">
+                                    {currentTab !== 'all' && currentTab !== 'fav' ? (
+                                      <button className="icon-button fav-button" onClick={(e) => { e.stopPropagation(); removeFundFromCurrentGroup(f.code); }} title="从当前分组移除">
+                                        <ExitIcon width="18" height="18" style={{ transform: 'rotate(180deg)' }} />
+                                      </button>
+                                    ) : (
+                                      <button className={`icon-button fav-button ${favorites.has(f.code) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFavorite(f.code); }} title={favorites.has(f.code) ? "取消自选" : "添加自选"}>
+                                        <StarIcon width="18" height="18" filled={favorites.has(f.code)} />
+                                      </button>
+                                    )}
+                                    <div className="title-text">
+                                      <span className={`name-text ${f.jzrq === todayStr ? 'updated' : ''}`} title={f.jzrq === todayStr ? "今日净值已更新" : ""}>{f.name}</span>
+                                      <span className="muted code-text">#{f.code}</span>
+                                    </div>
+                                  </div>
+                                  {(() => {
+                                    const hasTodayData = f.jzrq === todayStr;
+                                    const shouldHideChange = isTradingDay && !hasTodayData;
+                                    const valueDisplay = !shouldHideChange ? (f.dwjz ?? '—') : (f.noValuation ? (f.dwjz ?? '—') : (f.estPricedCoverage > 0.05 ? f.estGsz.toFixed(4) : (f.gsz ?? '—')));
+                                    return (
+                                      <div className="table-cell text-right value-cell">
+                                        <span style={{ fontWeight: 700 }}>{valueDisplay}</span>
+                                      </div>
+                                    );
+                                  })()}
+                                  <div className="table-cell text-right change-cell">
+                                    <span className={f.zzl > 0 ? 'up' : f.zzl < 0 ? 'down' : ''} style={{ fontWeight: 700 }}>
+                                      {f.zzl != null && f.zzl !== '' ? `${f.zzl > 0 ? '+' : ''}${Number(f.zzl).toFixed(2)}%` : '—'}
+                                    </span>
+                                  </div>
+                                  <div className="table-cell text-right est-change-cell">
+                                    <span className={f.noValuation ? 'muted' : (f.estPricedCoverage > 0.05 ? (f.estGszzl > 0 ? 'up' : f.estGszzl < 0 ? 'down' : '') : (Number(f.gszzl) > 0 ? 'up' : Number(f.gszzl) < 0 ? 'down' : ''))} style={{ fontWeight: 700 }}>
+                                      {f.noValuation ? '—' : (f.estPricedCoverage > 0.05 ? (f.estGszzl != null ? `${f.estGszzl > 0 ? '+' : ''}${Number(f.estGszzl).toFixed(2)}%` : '—') : (isNumber(f.gszzl) ? `${f.gszzl > 0 ? '+' : ''}${Number(f.gszzl).toFixed(2)}%` : (f.gszzl ?? '—')))}
+                                    </span>
+                                  </div>
+                                  <div className="table-cell text-right time-cell">
+                                    <span className="muted" style={{ fontSize: '12px' }}>{f.noValuation ? (f.jzrq || '-') : (f.gztime || f.time || '-')}</span>
+                                  </div>
+                                  {(() => {
+                                    const holding = holdings[f.code];
+                                    const profit = getHoldingProfit(f, holding);
+                                    const amount = profit ? profit.amount : null;
+                                    if (amount === null) {
+                                      return (
+                                        <div className="table-cell text-right holding-amount-cell" title="设置持仓" onClick={(e) => { e.stopPropagation(); setHoldingModal({ open: true, fund: f }); }}>
+                                          <span className="muted" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '12px', cursor: 'pointer' }}>未设置 <SettingsIcon width="12" height="12" /></span>
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <div className="table-cell text-right holding-amount-cell" title="点击设置持仓" onClick={(e) => { e.stopPropagation(); setActionModal({ open: true, fund: f }); }}>
+                                        <span style={{ fontWeight: 700, marginRight: 6 }}>¥{amount.toFixed(2)}</span>
+                                        <button className="icon-button" onClick={(e) => { e.stopPropagation(); setActionModal({ open: true, fund: f }); }} title="编辑持仓" style={{ border: 'none', width: '28px', height: '28px', marginLeft: -6 }}>
+                                          <SettingsIcon width="14" height="14" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })()}
+                                  {(() => {
+                                    const holding = holdings[f.code];
+                                    const profit = getHoldingProfit(f, holding);
+                                    const profitValue = profit ? profit.profitToday : null;
+                                    const hasProfit = profitValue !== null;
+                                    return (
+                                      <div className="table-cell text-right profit-cell">
+                                        <span className={hasProfit ? (profitValue > 0 ? 'up' : profitValue < 0 ? 'down' : '') : 'muted'} style={{ fontWeight: 700 }}>
+                                          {hasProfit ? `${profitValue > 0 ? '+' : profitValue < 0 ? '-' : ''}¥${Math.abs(profitValue).toFixed(2)}` : ''}
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
+                                  {(() => {
+                                    const holding = holdings[f.code];
+                                    const profit = getHoldingProfit(f, holding);
+                                    const total = profit ? profit.profitTotal : null;
+                                    const principal = holding && holding.cost && holding.share ? holding.cost * holding.share : 0;
+                                    const asPercent = percentModes[f.code];
+                                    const hasTotal = total !== null;
+                                    const formatted = hasTotal ? (asPercent && principal > 0 ? `${total > 0 ? '+' : total < 0 ? '-' : ''}${Math.abs((total / principal) * 100).toFixed(2)}%` : `${total > 0 ? '+' : total < 0 ? '-' : ''}¥${Math.abs(total).toFixed(2)}`) : '';
+                                    const cls = hasTotal ? (total > 0 ? 'up' : total < 0 ? 'down' : '') : 'muted';
+                                    return (
+                                      <div className="table-cell text-right holding-cell" title="点击切换金额/百分比" onClick={(e) => { e.stopPropagation(); if (hasTotal) setPercentModes(prev => ({ ...prev, [f.code]: !prev[f.code] })); }} style={{ cursor: hasTotal ? 'pointer' : 'default' }}>
+                                        <span className={cls} style={{ fontWeight: 700 }}>{formatted}</span>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                          </div>
+                        </div>
+                        <div className="table-fixed-col">
+                          <div className="table-header-cell table-header-cell-fixed text-center">操作</div>
+                          <AnimatePresence mode="popLayout">
+                            {displayFunds.map((f) => (
+                              <motion.div
+                                layout="position"
+                                key={f.code}
+                                className={`table-fixed-row ${hoveredPcRowCode === f.code ? 'row-hovered' : ''}`}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                onMouseEnter={() => setHoveredPcRowCode(f.code)}
+                                onMouseLeave={() => setHoveredPcRowCode(null)}
+                              >
+                                <div className="table-cell text-center action-cell">
+                                  <button className="icon-button danger" onClick={() => !refreshing && requestRemoveFund(f)} title="删除" disabled={refreshing} style={{ width: '28px', height: '28px', opacity: refreshing ? 0.6 : 1, cursor: refreshing ? 'not-allowed' : 'pointer' }}>
+                                    <TrashIcon width="14" height="14" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    )}
+                    {viewMode === 'list' && isMobile && (
                       <div className="table-header-row">
                         <div className="table-header-cell">基金名称</div>
                         <div className="table-header-cell text-right">净值/估值</div>
@@ -3651,7 +3800,8 @@ export default function HomePage() {
                       </div>
                     )}
                     <AnimatePresence mode="popLayout">
-                      {displayFunds.map((f) => (
+                      {displayFunds.map((f) =>
+                        (viewMode === 'list' && !isMobile) ? null : (
                         <motion.div
                           layout="position"
                           key={f.code}
@@ -4149,7 +4299,8 @@ export default function HomePage() {
                             )}
                           </motion.div>
                         </motion.div>
-                      ))}
+                        )
+                      )}
                     </AnimatePresence>
                   </div>
                 </motion.div>
